@@ -1,126 +1,70 @@
 const fs = require('fs');
 
 class Contenedor{
-    nextId;
-    arrayObj = new Array();
-    constructor(archivoNombre){
-        this.archivoNombre = archivoNombre
-        if(fs.existsSync(archivoNombre)){
-            this.arrayObj = JSON.parse(fs.readFileSync(this.archivoNombre, "utf-8"));
-            this.nextId = this.#getNextId();
-            console.log("existe");
-        } else{
-            this.nextId = 0;
-            fs.writeFileSync(this.archivoNombre, JSON.stringify(this.arrayObj));
-            console.log("No existe");
+    
+    
+    constructor(file){
+        this.file = file
+    }
+
+    writeFile = async data =>{
+        try {
+            await fs.promises.writeFile(
+                this.file, JSON.stringify(data, null,2)
+            )
+        } catch (err) {
+            console.log(`error: ${err}`);
         }
     }
 
-    async save(object){
+    getAll = async()=>{
         try{
-            if (!this.#isInFile(object)) {
-                object["id"] = this.nextId;
-                this.nextId++;
-                this.arrayObj.push(object);
-                await fs.promises.writeFile(this.archivoNombre, JSON.stringify(this.arrayObj));
-                console.log("se guardo" + object.id);
-                return Promise.resolve(object.id);
-            }else{
-                console.log("El objeto ya existe");
-            }
-        } catch (err){
-            console.log(err);
-        }
-    }
-
-    getById(id){
-        let obj = null;
-        this.arrayObj.map((element) =>{
-            if(element.id == id){
-                obj= element
-            }
-        })
-        return obj
-    }
-
-    #isInFile(obj){
-        let response = false;
-        this.arrayObj.forEach(element =>{
-            if(element.title == obj.title && element.price == obj.price && element.thumbnail == obj.thumbnail){
-                response = true;
-            }
-        })
-        return response;
-    }
-    #getNextId(){
-        if(thiss.arrayObj.length>0){
-            let maxId = this.arrayObj.reduce((acc,current)=>{
-                return Math.max(acc,current.id)
-            },0)
-            return maxId + 1;
-        } else{
-            return 0
-        }
-    }
-
-    async getAll(){
-        try{
-            const data = await fs.promises.readFile(this.archivoNombre,"utf-8");
-            this.arrayObj = JSON.parse(data);
-            return this.arrayObj;
+            const productos = await fs.promises.readFile(this.file,"utf-8");
+            return JSON.parse(productos)
         }catch (err){
             console.log(err);
         }
     } 
+    
 
-    async deleteById(id){
-        let flag = false
-        for (let i=0; i<this.arrayObj.length; i++){
-            if(this.arrayObj[i].id === id){
-                flag = truethis.arrayObj.splice(i, 1)
-                i--
-            }
-        }
-        if (flag){
-            try{
-                await fs.promises.writeFile(this.archivoNombre,JSON.stringify(this.arrayObj))
-                console.log("se ah borrado");
-            }
-            catch(err){
-                console.log(err);
-            }
-        }else{
-            console.log("No se logro borrar el objeto porque no existe");
-        }
+save = async() =>{
+    let pruductos = this.getAll
+    try {
+        let newId;
+        productos.length === 0 ? newId = 1 : newId = productos[productos.length - 1].id + 1;
+        let newObj = { ...obj, id: newId };
+        productos.push(newObj);
+        await this.writeFile(productos);
+        return newObj.id;
+    } catch (err) {
+        console.log(`error: ${err}`);
     }
-    async deleteAll(){
-        this.arrayObj = []
+}
+
+    getById = async id =>{
+        let productos = await this.getAll()
         try{
-            await fs.promises.writeFile(this.archivoNombre,JSON.stringify(this.arrayObj))
-            console.log("se borro todo");
-        }catch{
-            console.log(err);
+            const obj = productos.find(id=> productos.id ===id)
+            return obj ? obj : null
+        }catch (err){
+            console.log(`error: ${err}`);
+
         }
+    }
+
+    deleteById = async id=>{
+        let productos = await this.getAll();
+        try{
+            productos = productos.filter(producto => producto.id != id);
+            await this.writeFile(productos);
+        }catch (err) {
+            console.log(`error: ${err}`);
+        }
+    }
+    
+    deleteAll = async () =>{
+        this.writeFile([])
     }
 }
 
-let objeto1 = {title:'mouse', price: '150Usd',thumbnail:"aaa"}
-let objeto2 = {title:'teclado', price: '100Usd',thumbnail:"aaa"}
-let objeto3 = {title:'monitor', price: '300Usd',thumbnail:"aaa"}
-
-
-const productos = new Contenedor("./test.txt")
-
-
-function prueba(){
-    productos.getAll()
-    .then(() => productos.save(objeto1))
-    .then(() => productos.save(objeto2))
-    .then(() => productos.save(objeto3))
-    .then(array => {
-        console.log(array)
-        console.log(productos.getById(5));
-    })
-}
-
-prueba()
+module.exports = Contenedor;
